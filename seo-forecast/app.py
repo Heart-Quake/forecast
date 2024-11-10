@@ -1,205 +1,141 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
 import numpy as np
 
-class SEOForecastApp:
-    def __init__(self):
-        st.set_page_config(
-            page_title="SEO Forecast",
-            page_icon="📈",
-            layout="wide"
+st.set_page_config(
+    page_title="SEO Forecast",
+    page_icon="📈",
+    layout="wide"
+)
+
+# Configuration style
+st.markdown("""
+    <style>
+    .main {
+        background-color: #f8f9fa;
+    }
+    .stMetric {
+        background-color: white;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Titre principal
+st.title("SEO Forecast 📈")
+
+# Sidebar avec menu de configuration
+with st.sidebar:
+    st.header("⚙️ Configuration")
+    
+    with st.expander("🔗 Sources de données"):
+        uploaded_file_gsc = st.file_uploader(
+            "Données Search Console (CSV)",
+            type=['csv']
         )
-        
-    def run(self):
-        self.render_sidebar()
-        self.render_header()
-        self.render_main_content()
-
-    def render_sidebar(self):
-        with st.sidebar:
-            st.title("⚙️ Configuration")
-            
-            # Configuration des sources
-            st.header("Sources de données")
-            
-            # Google Search Console
-            with st.expander("Google Search Console"):
-                st.file_uploader("Importer données GSC", type=['csv'])
-                st.text_input("API Key GSC")
-                
-            # Google Analytics
-            with st.expander("Google Analytics"):
-                st.file_uploader("Importer données GA4", type=['csv'])
-                st.text_input("API Key GA4")
-            
-            # Paramètres de prévision
-            st.header("Paramètres")
-            forecast_period = st.selectbox(
-                "Période de prévision",
-                ["3 mois", "6 mois", "12 mois"]
-            )
-            
-            confidence_level = st.slider(
-                "Niveau de confiance",
-                min_value=0.8,
-                max_value=0.99,
-                value=0.95,
-                step=0.01
-            )
-
-    def render_header(self):
-        col1, col2, col3 = st.columns([2,1,1])
-        
-        with col1:
-            st.title("SEO Forecast 📈")
-        
-        with col2:
-            st.button("Rafraîchir les données", type="primary")
-            
-        with col3:
-            st.download_button(
-                "Exporter les résultats",
-                data="",  # À remplacer par les données réelles
-                file_name="seo_forecast.csv",
-                mime="text/csv"
-            )
-
-    def render_main_content(self):
-        # KPIs
-        self.render_kpis()
-        
-        # Graphiques
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            self.render_traffic_forecast()
-            
-        with col2:
-            self.render_revenue_forecast()
-            
-        # Tableau d'opportunités
-        self.render_opportunities_table()
-
-    def render_kpis(self):
-        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-        
-        with kpi1:
-            self.metric_card(
-                "Trafic Organique",
-                "125,000",
-                "+15.4%",
-                "prévision: 145,000"
-            )
-            
-        with kpi2:
-            self.metric_card(
-                "Revenu SEO",
-                "250,000 €",
-                "+22.7%",
-                "prévision: 310,000 €"
-            )
-            
-        with kpi3:
-            self.metric_card(
-                "Taux de Conversion",
-                "2.8%",
-                "-0.3%",
-                "prévision: 3.2%"
-            )
-            
-        with kpi4:
-            self.metric_card(
-                "ROI SEO",
-                "285%",
-                "+12.5%",
-                "prévision: 320%"
-            )
-
-    def metric_card(self, title, value, change, forecast):
-        st.metric(
-            label=title,
-            value=value,
-            delta=change,
-            help=forecast
+        uploaded_file_ga = st.file_uploader(
+            "Données Analytics (CSV)",
+            type=['csv']
         )
+    
+    periode = st.selectbox(
+        "📅 Période de prévision",
+        ["3 mois", "6 mois", "12 mois"]
+    )
+    
+    confidence = st.slider(
+        "🎯 Niveau de confiance",
+        min_value=80,
+        max_value=99,
+        value=95,
+        help="Niveau de confiance des prévisions"
+    )
+    
+    st.button("🔄 Actualiser les prévisions", type="primary")
 
-    def render_traffic_forecast(self):
+# KPIs principaux
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric(
+        label="Trafic Organique",
+        value="125,000",
+        delta="15.4%",
+        help="Trafic organique mensuel"
+    )
+
+with col2:
+    st.metric(
+        label="Revenu SEO",
+        value="250,000 €",
+        delta="22.7%",
+        help="Revenu généré par le trafic organique"
+    )
+
+with col3:
+    st.metric(
+        label="Conversion",
+        value="2.8%",
+        delta="-0.3%",
+        help="Taux de conversion moyen"
+    )
+
+with col4:
+    st.metric(
+        label="ROI SEO",
+        value="285%",
+        delta="12.5%",
+        help="Retour sur investissement SEO"
+    )
+
+# Graphiques
+tab1, tab2 = st.tabs(["📈 Prévisions", "🎯 Opportunités"])
+
+with tab1:
+    chart_col1, chart_col2 = st.columns(2)
+    
+    with chart_col1:
         st.subheader("Prévision de Trafic")
-        
-        # Données simulées
-        dates = pd.date_range(start='2024-01-01', periods=180, freq='D')
-        actual = np.random.normal(1000, 100, 90)
-        forecast = np.random.normal(1200, 150, 90)
-        
-        fig = go.Figure()
-        
-        # Données réelles
-        fig.add_trace(go.Scatter(
-            x=dates[:90],
-            y=actual,
-            name="Réel",
-            line=dict(color='#1d4ed8', width=2)
-        ))
-        
-        # Prévisions
-        fig.add_trace(go.Scatter(
-            x=dates[90:],
-            y=forecast,
-            name="Prévision",
-            line=dict(color='#60a5fa', dash='dash')
-        ))
-        
-        st.plotly_chart(fig, use_container_width=True)
-
-    def render_revenue_forecast(self):
+        dates = pd.date_range(start='2024-01-01', periods=90)
+        data = np.random.normal(1000, 100, 90)
+        df = pd.DataFrame({
+            'date': dates,
+            'traffic': data
+        })
+        st.line_chart(df.set_index('date'))
+    
+    with chart_col2:
         st.subheader("Prévision de Revenu")
-        
-        # Données simulées
-        dates = pd.date_range(start='2024-01-01', periods=180, freq='D')
-        revenue = np.random.normal(5000, 500, 180)
-        
-        fig = go.Figure()
-        
-        fig.add_trace(go.Scatter(
-            x=dates,
-            y=revenue,
-            name="Revenu",
-            line=dict(color='#059669')
-        ))
-        
-        st.plotly_chart(fig, use_container_width=True)
+        revenue_data = data * 10  # Simulation de revenu
+        df_revenue = pd.DataFrame({
+            'date': dates,
+            'revenue': revenue_data
+        })
+        st.line_chart(df_revenue.set_index('date'))
 
-    def render_opportunities_table(self):
-        st.subheader("Opportunités SEO")
-        
-        # Données simulées
-        data = {
-            'Mot-clé': ['mot clé 1', 'mot clé 2', 'mot clé 3'],
-            'Position': [8, 6, 5],
-            'Volume': [12000, 8000, 6500],
-            'Difficulté': [35, 42, 28],
-            'Potentiel': [85, 75, 90]
-        }
-        
-        df = pd.DataFrame(data)
-        
-        # Affichage avec mise en forme
-        st.dataframe(
-            df,
-            column_config={
-                "Potentiel": st.column_config.ProgressColumn(
-                    "Potentiel",
-                    help="Potentiel d'amélioration",
-                    format="%d%%",
-                    min_value=0,
-                    max_value=100,
-                ),
-            },
-            hide_index=True,
-        )
-
-if __name__ == "__main__":
-    app = SEOForecastApp()
-    app.run()
+with tab2:
+    st.subheader("Opportunités SEO")
+    
+    # Données d'exemple pour le tableau d'opportunités
+    opportunities = pd.DataFrame({
+        'Mot-clé': ['chaussures running', 'baskets sport', 'running femme'],
+        'Position': [8, 6, 5],
+        'Volume': [12000, 8000, 6500],
+        'Potentiel': [85, 75, 90]
+    })
+    
+    st.dataframe(
+        opportunities,
+        column_config={
+            "Potentiel": st.column_config.ProgressColumn(
+                "Potentiel",
+                help="Potentiel d'amélioration",
+                format="%d%%",
+                min_value=0,
+                max_value=100,
+            )
+        },
+        hide_index=True
+    )
