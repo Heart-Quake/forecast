@@ -1,4 +1,6 @@
 import streamlit as st
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
 import pandas as pd
 import numpy as np
 
@@ -26,34 +28,45 @@ st.markdown("""
 # Titre principal
 st.title("SEO Forecast 📈")
 
-# Sidebar avec menu de configuration
-with st.sidebar:
-    st.header("⚙️ Configuration")
+# Connexion à GSC et GA4
+@st.cache_resource
+def get_gsc_and_ga4_data():
+    # Connexion à GSC
+    creds = Credentials.from_info(...)  # Configurez les informations d'identification
+    gsc_service = build('webmasters', 'v3', credentials=creds)
     
-    with st.expander("🔗 Sources de données"):
-        uploaded_file_gsc = st.file_uploader(
-            "Données Search Console (CSV)",
-            type=['csv']
-        )
-        uploaded_file_ga = st.file_uploader(
-            "Données Analytics (CSV)",
-            type=['csv']
-        )
-    
-    periode = st.selectbox(
-        "📅 Période de prévision",
-        ["3 mois", "6 mois", "12 mois"]
+    # Récupération des données GSC
+    request = gsc_service.searchanalytics().query(
+        siteUrl='https://example.com',
+        body={
+            'startDate': '2023-01-01',
+            'endDate': '2023-12-31',
+            'dimensions': ['date', 'query']
+        }
     )
+    gsc_data = request.execute()
     
-    confidence = st.slider(
-        "🎯 Niveau de confiance",
-        min_value=80,
-        max_value=99,
-        value=95,
-        help="Niveau de confiance des prévisions"
+    # Connexion à GA4
+    creds = Credentials.from_info(...)  # Configurez les informations d'identification
+    ga4_service = build('analyticsdata', 'v1beta', credentials=creds)
+    
+    # Récupération des données GA4
+    request = ga4_service.properties().batchRunReports(
+        property='properties/123456789',
+        body={
+            'requests': [
+                {
+                    'dateRanges': [{'startDate': '2023-01-01', 'endDate': '2023-12-31'}],
+                    'metrics': [{'name': 'totalUsers'}, {'name': 'totalRevenue'}]
+                }
+            ]
+        }
     )
+    ga4_data = request.execute()
     
-    st.button("🔄 Actualiser les prévisions", type="primary")
+    return gsc_data, ga4_data
+
+gsc_data, ga4_data = get_gsc_and_ga4_data()
 
 # KPIs principaux
 col1, col2, col3, col4 = st.columns(4)
