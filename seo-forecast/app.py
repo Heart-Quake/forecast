@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -204,4 +203,3 @@ class SEOForecastApp:
 if __name__ == "__main__":
     app = SEOForecastApp()
     app.run()
-```
